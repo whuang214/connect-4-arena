@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "connect4-engine"
+name = "connect4-arena"
 version = "1.0.0"
 description = "Connect 4 AI engine: minimax, MCTS, and self-play RL agents with evaluation and tournament tooling"
 readme = "README.md"

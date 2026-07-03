@@ -1,6 +1,9 @@
-# Connect 4 AI Engine
+# Connect 4 Arena
 
-[![CI](https://github.com/whuang214/connect-4-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/whuang214/connect-4-engine/actions/workflows/ci.yml)
+*Can a self-play RL agent beat classical search? A Connect 4 tournament
+between minimax, MCTS, and deep RL.*
+
+[![CI](https://github.com/whuang214/connect4-arena/actions/workflows/ci.yml/badge.svg)](https://github.com/whuang214/connect4-arena/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -17,8 +20,8 @@ a negative result analyzed in depth in [docs/results.md](docs/results.md).
 ## Quickstart
 
 ```bash
-git clone https://github.com/whuang214/connect-4-engine
-cd connect-4-engine
+git clone https://github.com/whuang214/connect4-arena
+cd connect4-arena
 python -m venv .venv
 .venv\Scripts\activate            # Windows   (macOS/Linux: source .venv/bin/activate)
 pip install -e ".[ui,dev]"

@@ -7,7 +7,7 @@ result output are CWD-relative).
 ## Annotated tree
 
 ```
-connect-4-engine/
+connect4-arena/
 ├── pyproject.toml              # src-layout package; `connect4` console script;
 │                               # extras: [ui] pygame, [dev] pytest; pytest config
 ├── README.md                   # quickstart + results at a glance
