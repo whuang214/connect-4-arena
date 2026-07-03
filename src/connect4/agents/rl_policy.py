@@ -7,6 +7,7 @@ from typing import Optional
 import torch
 
 from connect4.agents.base import BaseAgent
+from connect4.tactics import find_immediate_win
 from connect4.models.policy_value_network import (
     PolicyValueNet,
     PolicyValueNetSmall,
@@ -93,12 +94,12 @@ class RLPolicyAgent(BaseAgent):
         # Tactical override: immediate win > immediate block > network move
         # Matches the training-time override so the agent plays consistently
         # with the tactical assumptions baked into its training data.
-        win_move = self._find_immediate_win(game, game.current_player)
+        win_move = find_immediate_win(game, game.current_player)
         if win_move is not None:
             return win_move
 
         opponent = 2 if game.current_player == 1 else 1
-        block_move = self._find_immediate_win(game, opponent)
+        block_move = find_immediate_win(game, opponent)
         if block_move is not None:
             return block_move
 
@@ -122,28 +123,6 @@ class RLPolicyAgent(BaseAgent):
             return int(torch.multinomial(probs, num_samples=1).item())
 
         return int(torch.argmax(logits).item())
-
-    @staticmethod
-    def _find_immediate_win(game, player) -> int | None:
-        """Return a column that gives `player` an immediate win, or None."""
-        center_order = [3, 2, 4, 1, 5, 0, 6]
-        legal_moves = game.get_legal_moves()
-
-        for col in center_order:
-            if col not in legal_moves:
-                continue
-            if game.current_player == player:
-                game.make_move(col)
-                won = game.winner == player
-                game.undo_move()
-            else:
-                tmp = game.clone()
-                tmp.current_player = player
-                tmp.make_move(col)
-                won = tmp.winner == player
-            if won:
-                return col
-        return None
 
     def evaluate_position(self, game) -> float:
         state = torch.tensor(

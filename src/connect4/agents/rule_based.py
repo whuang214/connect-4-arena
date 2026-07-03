@@ -1,4 +1,5 @@
 from connect4.agents.base import BaseAgent
+from connect4.tactics import find_immediate_win, ordered_legal_moves
 
 
 class RuleBasedAgent(BaseAgent):
@@ -24,63 +25,34 @@ class RuleBasedAgent(BaseAgent):
         opponent = 1 if my_player == 2 else 2
 
         # Rule 1: If we can win immediately, do it.
-        for move in legal_moves:
-            temp_game = game.clone()
-            result = temp_game.make_move(move)
-            if result.winner == my_player:
-                self.moves_chosen += 1
-                self.rule1_immediate_win += 1
-                return move
+        move = find_immediate_win(game, my_player)
+        if move is not None:
+            self.moves_chosen += 1
+            self.rule1_immediate_win += 1
+            return move
 
         # Rule 2: If opponent can win next move, block it.
-        for move in legal_moves:
-            temp_game = game.clone()
-            temp_game.current_player = opponent
-            result = temp_game.make_move(move)
-            if result.winner == opponent:
-                self.moves_chosen += 1
-                self.rule2_immediate_block += 1
-                return move
-
-        # Rule 3: Prefer center column if available.
-        center_col = game.COLS // 2
-        if center_col in legal_moves:
+        move = find_immediate_win(game, opponent)
+        if move is not None:
             self.moves_chosen += 1
-            self.rule3_center += 1
-            return center_col
+            self.rule2_immediate_block += 1
+            return move
 
-        # Rule 4: Prefer columns closer to center.
-        preferred_order = self.get_center_preferred_order(game.COLS)
-
-        for move in preferred_order:
-            if move in legal_moves:
-                self.moves_chosen += 1
+        # Rules 3 + 4: prefer the center column, then columns closest to it.
+        ordered = ordered_legal_moves(game)
+        if ordered:
+            move = ordered[0]
+            self.moves_chosen += 1
+            if move == game.COLS // 2:
+                self.rule3_center += 1
+            else:
                 self.rule4_center_preference += 1
-                return move
+            return move
 
-        # Fallback
+        # Fallback (unreachable while legal_moves is non-empty)
         self.moves_chosen += 1
         self.fallback_count += 1
         return legal_moves[0]
-
-    def get_center_preferred_order(self, cols: int) -> list[int]:
-        """
-        Returns columns ordered by closeness to center.
-        For 7 columns, this gives: [3, 2, 4, 1, 5, 0, 6]
-        """
-        center = cols // 2
-        order = [center]
-
-        for offset in range(1, cols):
-            left = center - offset
-            right = center + offset
-
-            if left >= 0:
-                order.append(left)
-            if right < cols:
-                order.append(right)
-
-        return order
 
     def get_stats(self) -> dict:
         return {

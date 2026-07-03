@@ -23,6 +23,7 @@ from torch import nn
 from tqdm import tqdm
 
 from connect4.engine import Connect4
+from connect4.tactics import CENTER_ORDER
 from connect4.agents.random import RandomAgent
 from connect4.agents.rule_based import RuleBasedAgent
 from connect4.agents.rl_policy import RLPolicyAgent
@@ -160,13 +161,12 @@ def _find_tactical_move(
 ) -> np.ndarray:
     M            = len(players)
     result       = np.full(M, -1, dtype=np.int64)
-    center_order = [3, 2, 4, 1, 5, 0, 6]
 
     for i in range(M):
         board  = boards[i]
         player = int(players[i])
         h      = heights[i]
-        for col in center_order:
+        for col in CENTER_ORDER:
             if h[col] >= 6:
                 continue
             row = 5 - int(h[col])

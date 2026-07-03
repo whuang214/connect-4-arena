@@ -2,6 +2,7 @@ import math
 import random
 from collections import deque
 from connect4.agents.base import BaseAgent
+from connect4.tactics import CENTER_ORDER, find_immediate_win, ordered_legal_moves
 
 # Maximum number of per-move stat entries kept in memory.
 # Prevents unbounded growth during long tournament runs.
@@ -65,7 +66,6 @@ class MCTSAgent(BaseAgent):
 
         self.iterations = iterations
         self.exploration_weight = exploration_weight
-        self.center_order = [3, 2, 4, 1, 5, 0, 6]
 
         self.root = None
         self.reset_stats()
@@ -111,7 +111,7 @@ class MCTSAgent(BaseAgent):
             return legal_moves[0]
 
         # 1. Immediate win
-        winning_move = self.find_immediate_win(game, root_player)
+        winning_move = find_immediate_win(game, root_player)
         if winning_move is not None:
             self.moves_chosen += 1
             self.immediate_win_hits += 1
@@ -123,7 +123,7 @@ class MCTSAgent(BaseAgent):
             return winning_move
 
         # 2. Immediate block
-        block_move = self.find_immediate_win(game, opponent)
+        block_move = find_immediate_win(game, opponent)
         if block_move is not None:
             self.moves_chosen += 1
             self.immediate_block_hits += 1
@@ -236,20 +236,20 @@ class MCTSAgent(BaseAgent):
         opponent = self.get_opponent(current_player)
         legal_moves = game.get_legal_moves()
 
-        winning_move = self.find_immediate_win(game, current_player)
+        winning_move = find_immediate_win(game, current_player)
         if winning_move is not None:
             return winning_move
 
-        block_move = self.find_immediate_win(game, opponent)
+        block_move = find_immediate_win(game, opponent)
         if block_move is not None:
             return block_move
 
         safe_moves = []
-        for move in self.center_order:
+        for move in CENTER_ORDER:
             if move not in legal_moves:
                 continue
             game.make_move(move)
-            opp_winning_reply = self.find_immediate_win(game, opponent)
+            opp_winning_reply = find_immediate_win(game, opponent)
             game.undo_move()
             if opp_winning_reply is None:
                 safe_moves.append(move)
@@ -258,8 +258,7 @@ class MCTSAgent(BaseAgent):
             top_k = safe_moves[:3] if len(safe_moves) >= 3 else safe_moves
             return random.choice(top_k)
 
-        ordered_legal = [m for m in self.center_order if m in legal_moves]
-        return random.choice(ordered_legal)
+        return random.choice(ordered_legal_moves(game))
 
     def child_value_for_root(self, child: MCTSNode, root_player: int) -> float:
         if child.visits == 0:
@@ -283,9 +282,9 @@ class MCTSAgent(BaseAgent):
         safe_moves     = []
         remaining_moves = []
 
-        opp_immediate_win = self.find_immediate_win(game, opponent)
+        opp_immediate_win = find_immediate_win(game, opponent)
 
-        for move in self.center_order:
+        for move in CENTER_ORDER:
             if move not in legal_moves:
                 continue
 
@@ -302,7 +301,7 @@ class MCTSAgent(BaseAgent):
                 continue
 
             game.make_move(move)
-            opp_wins_after = self.find_immediate_win(game, opponent)
+            opp_wins_after = find_immediate_win(game, opponent)
             game.undo_move()
 
             if opp_wins_after is None:
@@ -318,39 +317,6 @@ class MCTSAgent(BaseAgent):
                     ordered.append(move)
                     seen.add(move)
         return ordered
-
-    def find_immediate_win(self, game, player) -> int | None:
-        """
-        Return a column that gives `player` an immediate win, or None.
-
-        FIX: previously mutated game.current_player directly, leaving it
-        corrupted if make_move raised an exception. Now uses a temporary
-        clone so the live game state is never touched.
-        """
-        legal_moves = game.get_legal_moves()
-
-        for move in self.center_order:
-            if move not in legal_moves:
-                continue
-
-            # Clone only when we need to simulate as the other player.
-            # If it's already player's turn, use make_move/undo directly
-            # (faster — avoids deepcopy on the common path).
-            if game.current_player == player:
-                game.make_move(move)
-                is_win = game.winner == player
-                game.undo_move()
-            else:
-                # FIX: use a clone instead of mutating current_player
-                tmp = game.clone()
-                tmp.current_player = player
-                tmp.make_move(move)
-                is_win = tmp.winner == player
-
-            if is_win:
-                return move
-
-        return None
 
     def get_state_key(self, game):
         return (
